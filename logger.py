@@ -2,21 +2,6 @@ import inspect
 import json
 import math
 from datetime import datetime
-from typing import NotRequired, TypedDict
-
-
-class SpriteInfo(TypedDict):
-    type: str
-    pos: NotRequired[list[float]]
-    vel: NotRequired[list[float]]
-    rad: NotRequired[float]
-    rot: NotRequired[float]
-
-
-class GroupInfo(TypedDict):
-    count: int
-    sprites: list[SpriteInfo]
-
 
 __all__ = ["log_state", "log_event"]
 
@@ -30,7 +15,7 @@ _event_log_initialized = False
 _start_time = datetime.now()
 
 
-def log_state() -> None:
+def log_state():
     global _frame_count, _state_log_initialized
 
     # Stop logging after `_MAX_SECONDS` seconds
@@ -54,16 +39,15 @@ def log_state() -> None:
 
     local_vars = frame_back.f_locals.copy()
 
-    screen_size: list[int] = []
-    game_state: dict[str, object] = {}
-    sprite_info: SpriteInfo
+    screen_size = []
+    game_state = {}
 
     for key, value in local_vars.items():
         if "pygame" in str(type(value)) and hasattr(value, "get_size"):
-            screen_size = list(value.get_size())
+            screen_size = value.get_size()
 
         if hasattr(value, "__class__") and "Group" in value.__class__.__name__:
-            sprites_data: list[SpriteInfo] = []
+            sprites_data = []
 
             for i, sprite in enumerate(value):
                 if i >= _SPRITE_SAMPLE_LIMIT:
@@ -91,9 +75,7 @@ def log_state() -> None:
 
                 sprites_data.append(sprite_info)
 
-            group_info: GroupInfo = {"count": len(value), "sprites": sprites_data}
-
-            game_state[key] = group_info
+            game_state[key] = {"count": len(value), "sprites": sprites_data}
 
         if len(game_state) == 0 and hasattr(value, "position"):
             sprite_info = {"type": value.__class__.__name__}
@@ -117,7 +99,7 @@ def log_state() -> None:
 
             game_state[key] = sprite_info
 
-    entry: dict[str, object] = {
+    entry = {
         "timestamp": now.strftime("%H:%M:%S.%f")[:-3],
         "elapsed_s": math.floor((now - _start_time).total_seconds()),
         "frame": _frame_count,
@@ -133,12 +115,12 @@ def log_state() -> None:
     _state_log_initialized = True
 
 
-def log_event(event_type: str, **details: object) -> None:
+def log_event(event_type, **details):
     global _event_log_initialized
 
     now = datetime.now()
 
-    event: dict[str, object] = {
+    event = {
         "timestamp": now.strftime("%H:%M:%S.%f")[:-3],
         "elapsed_s": math.floor((now - _start_time).total_seconds()),
         "frame": _frame_count,
